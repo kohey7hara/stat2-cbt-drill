@@ -352,6 +352,34 @@ input {
   color: var(--accent-2);
 }
 
+.explanation h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.explanation dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.explanation dt {
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.explanation dd {
+  margin: 4px 0 0;
+}
+
+.explanation .formula {
+  margin: 8px 0;
+  padding: 10px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .result-panel {
   line-height: 1.6;
 }
