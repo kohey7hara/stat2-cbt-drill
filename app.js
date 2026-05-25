@@ -30,9 +30,13 @@ function detail(title, rows) {
   return `<h3>${title}</h3><dl>${rows.map(([label, body]) => `<div><dt>${label}</dt><dd>${body}</dd></div>`).join("")}</dl>`;
 }
 
-function typesetMath(root = document.body) {
+function typesetMath(root = document.body, attempt = 0) {
   if (window.MathJax?.typesetPromise) {
     window.MathJax.typesetPromise([root]).catch(() => {});
+    return;
+  }
+  if (attempt < 20) {
+    window.setTimeout(() => typesetMath(root, attempt + 1), 150);
   }
 }
 
