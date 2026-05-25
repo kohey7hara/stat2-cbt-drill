@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>統計検定2級 CBT突破ドリル</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="topbar" aria-label="学習メニュー">
+        <div>
+          <p class="eyebrow">統計検定2級</p>
+          <h1>CBT突破ドリル</h1>
+        </div>
+        <div class="scorebox" aria-live="polite">
+          <span id="session-label">演習モード</span>
+          <strong id="score-label">0 / 0</strong>
+        </div>
+      </section>
+
+      <section class="control-band">
+        <div class="mode-tabs" role="tablist" aria-label="モード">
+          <button class="tab is-active" data-mode="practice" type="button">演習</button>
+          <button class="tab" data-mode="exam" type="button">模試</button>
+          <button class="tab" data-mode="weak" type="button">弱点</button>
+        </div>
+        <div class="filters">
+          <label>
+            分野
+            <select id="topic-select">
+              <option value="all">全分野</option>
+            </select>
+          </label>
+          <label>
+            問題数
+            <input id="count-input" type="number" min="5" max="50" step="5" value="20">
+          </label>
+          <button id="start-btn" class="primary" type="button">開始</button>
+        </div>
+      </section>
+
+      <section class="status-grid" aria-label="学習状況">
+        <article>
+          <span>正答率</span>
+          <strong id="accuracy">-</strong>
+        </article>
+        <article>
+          <span>連続正解</span>
+          <strong id="streak">0</strong>
+        </article>
+        <article>
+          <span>要復習</span>
+          <strong id="weak-count">0</strong>
+        </article>
+      </section>
+
+      <section class="strategy-band" aria-label="CBT対策">
+        <div>
+          <h2>50点から70点へ上げる方針</h2>
+          <p>公式問題集で見た型を覚えるだけでなく、問題文から「分布・推定・検定・回帰のどれを使うか」を選ぶ訓練を優先します。</p>
+        </div>
+        <ol>
+          <li>数式暗記より、状況判断を先に答える</li>
+          <li>計算問題は標準誤差・自由度・片側両側を確認する</li>
+          <li>不正解は分野ではなく「間違え方」で復習する</li>
+        </ol>
+      </section>
+
+      <section class="workspace">
+        <aside class="progress-panel">
+          <h2>分野別</h2>
+          <div id="topic-stats" class="topic-stats"></div>
+          <div class="source-note">
+            参考PDFの章立て: 記述統計、確率統計、推測統計、仮説検定、線形モデル、適合度・独立性検定
+          </div>
+        </aside>
+
+        <section class="question-panel" aria-live="polite">
+          <div class="question-meta">
+            <span id="question-number">No. 1</span>
+            <span id="question-topic">推定</span>
+            <span id="question-difficulty">標準</span>
+          </div>
+          <h2 id="question-text"></h2>
+          <div id="given-box" class="given-box"></div>
+          <div id="choices" class="choices"></div>
+          <div class="actions">
+            <button id="check-btn" class="primary" type="button">解答する</button>
+            <button id="next-btn" type="button" disabled>次へ</button>
+          </div>
+          <div id="explanation" class="explanation" hidden></div>
+        </section>
+      </section>
+
+      <section id="result-panel" class="result-panel" hidden>
+        <h2>結果</h2>
+        <p id="result-summary"></p>
+        <div id="review-list" class="review-list"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
