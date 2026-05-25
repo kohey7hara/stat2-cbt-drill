@@ -222,6 +222,16 @@ input {
   margin-top: 14px;
 }
 
+.bank-summary {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #eef5f4;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .progress-row {
   display: grid;
   gap: 5px;
@@ -350,6 +360,20 @@ input {
 
 .explanation strong {
   color: var(--accent-2);
+}
+
+.tip-box {
+  margin: 10px 0 14px;
+  padding: 12px;
+  border: 1px solid #e1c99f;
+  border-radius: 8px;
+  background: #fff8e8;
+}
+
+.tip-box b {
+  display: block;
+  margin-bottom: 4px;
+  color: #7a4b12;
 }
 
 .explanation h3 {
