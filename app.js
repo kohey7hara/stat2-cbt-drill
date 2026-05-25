@@ -35,6 +35,8 @@ function tipHtml(item) {
   let tip = "";
   if (text.includes("95%信頼区間")) {
     tip = "簡単に言うと「本当の平均がだいたいこの範囲に入りそう」と見積もる問題です。95%信頼区間は、この方法で区間を100回作ると、そのうち約95回は真の母平均を含む、という意味です。1つの区間について『真の値が95%の確率で動く』という意味ではありません。";
+  } else if (text.includes("CBT実戦") || item.difficulty === "CBT実戦") {
+    tip = "簡単に言うと、長い文章や表の中から、必要な条件だけを抜き出して使う問題です。CBTでは問題文が親切に式を教えてくれないので、データの型、比較したいもの、推定か検定かを先に決めます。";
   } else if (text.includes("標準誤差")) {
     tip = "簡単に言うと「標本から計算した値が、サンプリングのたびにどれくらいブレるか」を求める問題です。標準偏差は個々のデータのばらつき、標準誤差は平均や比率などの推定値のばらつきです。";
   } else if (text.includes("検定統計量")) {
@@ -107,6 +109,17 @@ function q(topic, difficulty, text, given, correct, distractors, explanation, su
   const choices = makeChoices(correct, distractors, suffix);
   const answer = choices.indexOf(`${typeof correct === "number" ? fmt(correct) : correct}${suffix}`);
   return { topic, difficulty, text, given, choices, answer, explanation };
+}
+
+function dataTable(headers, rows) {
+  return `<table class="data-table"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function renderGiven(given) {
+  if (!given) return "";
+  if (Array.isArray(given)) return given.map((line) => `<div>${line}</div>`).join("");
+  if (given.includes("<table")) return given;
+  return given.split("、").map((line) => `<div>${line}</div>`).join("");
 }
 
 const generators = [
@@ -606,6 +619,171 @@ const generators = [
       ["計算", `<div class="formula">${math(`z=\\frac{${fmt(phat)}-0.5}{\\sqrt{0.5(1-0.5)/${n}}}=${fmt(z)}`)}<br>${math(`p\\値\\approx 2\\{1-\\Phi(|${fmt(z)}|)\\}=${fmt(pTwo)}`)}</div>`],
       ["注意点", `片側p値と両側p値を取り違えると、結論が変わることがあります。`]
     ]));
+  },
+  () => {
+    const n = pick([120, 160, 200]);
+    const mean = pick([51.2, 52.4, 53.1]);
+    const sigma = pick([8.0, 9.5, 10.0]);
+    const se = sigma / Math.sqrt(n);
+    const lower = mean - 1.96 * se;
+    const upper = mean + 1.96 * se;
+    const ans = `${fmt(lower, 2)} から ${fmt(upper, 2)}`;
+    return q("推定", "CBT実戦", "ある自治体では、成人の睡眠時間に関する調査を行った。無作為に抽出した住民の平均睡眠時間から、自治体全体の平均睡眠時間を推定したい。母標準偏差は過去調査から既知とみなせる。95%信頼区間として最も適切なものを選べ。", [
+      `標本サイズ n=${n}`,
+      `標本平均 ${mean} 時間`,
+      `母標準偏差 ${sigma} 時間`
+    ], ans, [`${fmt(mean - se, 2)} から ${fmt(mean + se, 2)}`, `${fmt(mean - 2.58 * se, 2)} から ${fmt(mean + 2.58 * se, 2)}`, `${fmt(mean - 1.96 * sigma, 2)} から ${fmt(mean + 1.96 * sigma, 2)}`, `${fmt(lower - 0.5, 2)} から ${fmt(upper + 0.5, 2)}`], detail("文章から信頼区間の型を選ぶ", [
+      ["考え方", `母標準偏差が既知とみなせるので、母平均の95%信頼区間は ${math("\\bar{x}\\pm 1.96\\sigma/\\sqrt{n}")} です。`],
+      ["計算", `<div class="formula">${math(`SE=\\frac{${sigma}}{\\sqrt{${n}}}=${fmt(se, 3)}`)}<br>${math(`${mean}\\pm 1.96\\times ${fmt(se, 3)}=[${fmt(lower, 2)}, ${fmt(upper, 2)}]`)}</div>`],
+      ["CBT視点", `文章が長くても、読むべき条件は「母標準偏差既知」「母平均」「95%」の3つです。`]
+    ]));
+  },
+  () => {
+    const before = pick([128.4, 132.1, 76.8]);
+    const after = before - pick([3.2, 4.5, 5.1]);
+    const dbar = round(after - before, 2);
+    const sd = pick([6.0, 7.5, 8.2]);
+    const n = pick([18, 24, 30]);
+    const t = dbar / (sd / Math.sqrt(n));
+    return q("検定", "CBT実戦", "同じ患者に対して、服薬前後で指標を測定した。薬の効果により平均値が変化したかを検討したい。対応のあるt検定を行うとき、検定統計量として最も近いものを選べ。", [
+      `前後差は「服薬後 - 服薬前」と定義する`,
+      `差の平均 ${dbar}`,
+      `差の標準偏差 ${sd}`,
+      `患者数 n=${n}`
+    ], t, [dbar / sd, Math.abs(t), dbar / Math.sqrt(n), sd / Math.sqrt(n)], detail("対応ありの設定を見抜く", [
+      ["考え方", `同じ患者の前後比較なので、2群を独立に扱わず、各患者の差を1つの標本として扱います。`],
+      ["計算", `<div class="formula">${math(`t=\\frac{\\bar{d}}{s_d/\\sqrt{n}}=\\frac{${dbar}}{${sd}/\\sqrt{${n}}}=${fmt(t)}`)}</div>`],
+      ["CBT視点", `「同じ対象」「前後」「ペア」は対応のある検定のサインです。符号も差の定義に従います。`]
+    ]));
+  },
+  () => {
+    const rows = [
+      ["広告A", rnd(38, 60), rnd(160, 240)],
+      ["広告B", rnd(55, 85), rnd(160, 240)]
+    ];
+    const p1 = rows[0][1] / rows[0][2];
+    const p2 = rows[1][1] / rows[1][2];
+    const pooled = (rows[0][1] + rows[1][1]) / (rows[0][2] + rows[1][2]);
+    const se = Math.sqrt(pooled * (1 - pooled) * (1 / rows[0][2] + 1 / rows[1][2]));
+    const z = (p2 - p1) / se;
+    return q("検定", "CBT実戦", "ECサイトで2種類の広告をランダムに表示し、購入率に差があるかを検討した。帰無仮説を「2つの広告の購入率は等しい」とするとき、検定統計量として最も近いものを選べ。", dataTable(["広告", "購入者数", "表示人数"], rows), z, [(p2 - p1) / Math.sqrt(p1 * (1 - p1) / rows[0][2] + p2 * (1 - p2) / rows[1][2]), p2 - p1, z ** 2, (rows[1][1] - rows[0][1]) / (rows[0][2] + rows[1][2])], detail("2標本比率検定の読み取り", [
+      ["考え方", `帰無仮説で2つの比率が等しいと置くため、標準誤差にはプールした比率 ${math("\\hat{p}")} を使います。`],
+      ["計算", `<div class="formula">${math(`\\hat{p}_A=${fmt(p1)},\\quad \\hat{p}_B=${fmt(p2)},\\quad \\hat{p}=${fmt(pooled)}`)}<br>${math(`z=\\frac{\\hat{p}_B-\\hat{p}_A}{\\sqrt{\\hat{p}(1-\\hat{p})(1/n_A+1/n_B)}}=${fmt(z)}`)}</div>`],
+      ["CBT視点", `A/Bテスト、購入率、割合の差、ランダム表示、という語がそろったら2標本比率の検定を疑います。`]
+    ]));
+  },
+  () => {
+    const tableRows = [
+      ["男性", rnd(42, 70), rnd(30, 55)],
+      ["女性", rnd(48, 78), rnd(28, 52)]
+    ];
+    const row1 = tableRows[0][1] + tableRows[0][2];
+    const col1 = tableRows[0][1] + tableRows[1][1];
+    const total = tableRows.flat().filter((x) => typeof x === "number").reduce((s, x) => s + x, 0);
+    const expected = row1 * col1 / total;
+    return q("カテゴリ", "CBT実戦", "ある資格試験について、性別と合否に関連があるかを調べたい。独立性のカイ二乗検定を行うため、男性かつ合格セルの期待度数として最も近いものを選べ。", dataTable(["性別", "合格", "不合格"], tableRows), expected, [tableRows[0][1], col1 / total, row1 / total, (tableRows[0][1] + tableRows[1][2]) / 2], detail("クロス集計表の期待度数", [
+      ["考え方", `独立なら、各セルの期待度数は ${math("行合計\\times 列合計/総数")} で求めます。`],
+      ["計算", `<div class="formula">${math(`E=\\frac{${row1}\\times ${col1}}{${total}}=${fmt(expected)}`)}</div>`],
+      ["CBT視点", `「性別と合否に関連」ならカテゴリ同士の関連です。平均の検定ではなく独立性の検定です。`]
+    ]));
+  },
+  () => {
+    const groups = [
+      ["低用量", rnd(18, 28), rnd(4, 8)],
+      ["中用量", rnd(22, 34), rnd(4, 8)],
+      ["高用量", rnd(27, 40), rnd(4, 8)]
+    ];
+    const ans = "一元配置分散分析";
+    return q("分散分析", "CBT実戦", "3種類の投与量で、ある連続量の平均に差があるかを調べたい。各群は別々の被験者からなる。最初に用いる方法として最も適切なものを選べ。", dataTable(["群", "標本平均", "標準偏差"], groups), ans, ["対応のあるt検定", "独立性のカイ二乗検定", "単回帰分析", "適合度検定"], detail("3群以上の平均比較", [
+      ["考え方", `量的変数の平均を3群以上で比較するので、一元配置分散分析を使います。`],
+      ["判断", `群は低用量・中用量・高用量の3つで、被験者は別々です。対応のある検定ではありません。`],
+      ["CBT視点", `2群ならt検定、3群以上なら分散分析、カテゴリ同士ならカイ二乗検定、という分岐を先に作ります。`]
+    ]));
+  },
+  () => {
+    const b0 = rnd(35, 55);
+    const b1 = pick([1.8, 2.2, -1.5]);
+    const se = pick([0.35, 0.45, 0.6]);
+    const t = b1 / se;
+    const x = rnd(6, 12);
+    const yhat = b0 + b1 * x;
+    return q("回帰", "CBT実戦", "学習時間から試験得点を予測する単回帰分析を行った。回帰係数の有意性と予測値に関する記述として最も適切なものを選べ。", [
+      `推定式: 得点 = ${b0} + ${b1} × 学習時間`,
+      `学習時間の係数の標準誤差: ${se}`,
+      `学習時間が ${x} 時間の人の予測得点を考える`
+    ], `t値は ${fmt(t)}、予測値は ${fmt(yhat)}`, [`t値は ${fmt(b1 * se)}、予測値は ${fmt(yhat)}`, `t値は ${fmt(t)}、予測値は ${fmt(b1 * x)}`, `t値は ${fmt(se / b1)}、予測値は ${fmt(b0)}`, `t値は ${fmt(Math.abs(t))}、予測値は ${fmt(b0 - b1 * x)}`], detail("回帰出力を複数読む", [
+      ["考え方", `係数のt値は係数を標準誤差で割ります。予測値は回帰式に ${math("x")} を代入します。`],
+      ["計算", `<div class="formula">${math(`t=\\frac{${b1}}{${se}}=${fmt(t)}`)}<br>${math(`\\hat{y}=${b0}+${b1}\\times ${x}=${fmt(yhat)}`)}</div>`],
+      ["CBT視点", `回帰問題では、係数の解釈、t値、予測値、決定係数が同じ設問で混ざることがあります。`]
+    ]), "");
+  },
+  () => {
+    const statements = [
+      ["p値が0.03であれば、帰無仮説が正しい確率は3%である", "この記述は誤り。p値は帰無仮説のもとで今回以上に極端な結果が出る確率である"],
+      ["95%信頼区間に0が含まれなければ、対応する両側5%検定で有意といえる", "この記述は正しい。係数や平均差の検定では0を含むかが判断材料になる"],
+      ["標準誤差は、標本平均などの推定量のばらつきを表す", "この記述は正しい。個々のデータのばらつきではなく推定量のばらつきである"],
+      ["相関係数が0.8なら、xがyの原因であることが示された", "この記述は誤り。相関だけでは因果関係は示されない"]
+    ];
+    const chosen = pick(statements);
+    return q("検定", "CBT実戦", "統計的推測に関する次の記述の正誤と理由として最も適切なものを選べ。", chosen[0], chosen[1], [
+      "この記述は正しい。p値は帰無仮説が正しい確率を表す",
+      "この記述は正しい。相関係数が大きければ必ず因果関係がある",
+      "この記述は誤り。標準誤差は必ず標準偏差と等しい",
+      "この記述は誤り。95%信頼区間は1つの区間に真の値が95%の確率で入るという意味である"
+    ], detail("用語の誤解をつぶす", [
+      ["考え方", `CBTでは計算だけでなく、p値・信頼区間・標準誤差・相関の意味を文章で問われます。`],
+      ["判断", `記述「${chosen[0]}」について、正誤だけでなく理由まで一致する選択肢を選びます。`],
+      ["CBT視点", `特に「p値=帰無仮説が正しい確率」「相関=因果」は典型的な誤りです。`]
+    ]));
+  },
+  () => {
+    const n = pick([36, 49, 64]);
+    const sigma = pick([12, 14, 16]);
+    const mu = 100;
+    const threshold = mu + pick([3, 4]) * sigma / Math.sqrt(n);
+    const z = (threshold - mu) / (sigma / Math.sqrt(n));
+    const prob = 1 - normalCdfApprox(z);
+    return q("分布", "CBT実戦", "ある製品の重量は平均100g、標準偏差σgの母集団から独立に抽出される。n個の平均重量が基準値を超える確率を、中心極限定理に基づき近似したい。最も近いものを選べ。", [
+      `母平均 μ=${mu}`,
+      `母標準偏差 σ=${sigma}`,
+      `標本サイズ n=${n}`,
+      `基準値 ${fmt(threshold, 2)}`
+    ], prob, [1 - normalCdfApprox((threshold - mu) / sigma), normalCdfApprox(z), sigma / Math.sqrt(n), 0.5], detail("中心極限定理の実戦読解", [
+      ["考え方", `標本平均の分布は、平均 ${math("\\mu")}、標準偏差 ${math("\\sigma/\\sqrt{n}")} で近似します。`],
+      ["計算", `<div class="formula">${math(`z=\\frac{${fmt(threshold, 2)}-${mu}}{${sigma}/\\sqrt{${n}}}=${fmt(z)}`)}<br>${math(`P(\\bar{X}>${fmt(threshold, 2)})=1-\\Phi(${fmt(z)})=${fmt(prob)}`)}</div>`],
+      ["CBT視点", `個々の重量ではなく「平均重量」なので、標準偏差をそのまま使わないことがポイントです。`]
+    ]));
+  },
+  () => {
+    const n = pick([400, 600, 800]);
+    const x = Math.round(n * pick([0.42, 0.47, 0.53]));
+    const phat = x / n;
+    const se = Math.sqrt(phat * (1 - phat) / n);
+    const lower = phat - 1.96 * se;
+    const upper = phat + 1.96 * se;
+    return q("推定", "CBT実戦", "無作為抽出した有権者に候補者Aを支持するかを尋ねた。支持率の95%信頼区間として最も適切なものを選べ。", [
+      `回答者数 n=${n}`,
+      `候補者Aを支持: ${x} 人`
+    ], `${fmt(lower, 3)} から ${fmt(upper, 3)}`, [`${fmt(phat - se, 3)} から ${fmt(phat + se, 3)}`, `${fmt(lower * 100, 1)}% から ${fmt(upper * 100, 1)}%`, `${fmt(phat, 3)} から ${fmt(se, 3)}`, `${fmt(lower - 0.03, 3)} から ${fmt(upper + 0.03, 3)}`], detail("比率の信頼区間", [
+      ["考え方", `支持する/しないの2値データなので、標本比率 ${math("\\hat{p}")} の信頼区間を作ります。`],
+      ["計算", `<div class="formula">${math(`\\hat{p}=\\frac{${x}}{${n}}=${fmt(phat)}`)}<br>${math(`SE=\\sqrt{\\frac{\\hat{p}(1-\\hat{p})}{n}}=${fmt(se)}`)}<br>${math(`\\hat{p}\\pm 1.96SE=[${fmt(lower, 3)}, ${fmt(upper, 3)}]`)}</div>`],
+      ["CBT視点", `人数の問題でも、聞かれているのが支持率なら比率の区間です。%表記と小数表記の混在にも注意します。`]
+    ]));
+  },
+  () => {
+    const data = [
+      ["店舗A", rnd(22, 35), rnd(180, 260)],
+      ["店舗B", rnd(18, 32), rnd(160, 240)],
+      ["店舗C", rnd(25, 40), rnd(190, 280)]
+    ];
+    const totalComplaints = data.reduce((s, row) => s + row[1], 0);
+    const totalCustomers = data.reduce((s, row) => s + row[2], 0);
+    const rate = totalComplaints / totalCustomers;
+    return q("記述統計", "CBT実戦", "複数店舗の苦情率を全体で要約したい。店舗ごとの苦情率を単純平均するのではなく、全顧客数で重み付けした全体の苦情率として最も近いものを選べ。", dataTable(["店舗", "苦情件数", "顧客数"], data), rate, [data.reduce((s, row) => s + row[1] / row[2], 0) / data.length, totalComplaints / data.length, totalCustomers / totalComplaints, rate + 0.05], detail("重み付きの全体率", [
+      ["考え方", `店舗ごとの母数が違うため、率の単純平均ではなく、全苦情件数を全顧客数で割ります。`],
+      ["計算", `<div class="formula">${math(`全体率=\\frac{${totalComplaints}}{${totalCustomers}}=${fmt(rate)}`)}</div>`],
+      ["CBT視点", `平均の平均、率の平均は落とし穴です。母数が違う表では、何を分母にするかを確認します。`]
+    ]));
   }
 ];
 
@@ -635,6 +813,11 @@ function buildQuestionSet() {
     if (!pool.length) pool = generators;
   }
   const count = state.mode === "exam" ? 35 : requested;
+  if (state.mode === "exam") {
+    const hardPool = pool.filter((gen) => ["CBT実戦", "難", "判断", "やや難"].includes(gen().difficulty));
+    const easyPool = pool.filter((gen) => !["CBT実戦", "難", "判断", "やや難"].includes(gen().difficulty));
+    return Array.from({ length: count }, () => pick(Math.random() < 0.8 && hardPool.length ? hardPool : easyPool.length ? easyPool : pool)());
+  }
   return Array.from({ length: count }, () => pick(pool)());
 }
 
@@ -655,7 +838,7 @@ function renderQuestion() {
   $("question-topic").textContent = item.topic;
   $("question-difficulty").textContent = item.difficulty;
   $("question-text").textContent = item.text;
-  $("given-box").innerHTML = item.given ? item.given.split("、").map((x) => `<div>${x}</div>`).join("") : "";
+  $("given-box").innerHTML = renderGiven(item.given);
   $("choices").innerHTML = item.choices
     .map((choice, index) => `<button class="choice" type="button" data-index="${index}"><span class="mark">${index + 1}</span><span>${choice}</span></button>`)
     .join("");
@@ -737,7 +920,7 @@ function renderStats() {
   $("accuracy").textContent = total ? `${Math.round((correct / total) * 100)}%` : "-";
   $("streak").textContent = state.streak;
   $("weak-count").textContent = Object.values(state.stats).reduce((s, x) => s + x.weak, 0);
-  $("bank-summary").innerHTML = `問題生成パターン: <strong>${generators.length}</strong><br>難問: ${difficultyCounts["難"] || 0} / 判断: ${difficultyCounts["判断"] || 0} / やや難: ${difficultyCounts["やや難"] || 0}`;
+  $("bank-summary").innerHTML = `問題生成パターン: <strong>${generators.length}</strong><br>CBT実戦: ${difficultyCounts["CBT実戦"] || 0} / 難問: ${difficultyCounts["難"] || 0} / 判断: ${difficultyCounts["判断"] || 0}`;
   $("topic-stats").innerHTML = topics.map((topic) => {
     const stat = ensureTopicStats(topic);
     const pct = stat.total ? Math.round((stat.correct / stat.total) * 100) : 0;

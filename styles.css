@@ -297,6 +297,31 @@ input {
   display: none;
 }
 
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+  text-align: left;
+}
+
+.data-table th {
+  background: #edf2f3;
+  color: var(--ink);
+}
+
 .choices {
   display: grid;
   gap: 10px;
