@@ -24,7 +24,12 @@ const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const pick = (arr) => arr[rnd(0, arr.length - 1)];
 const round = (x, d = 3) => Number(x.toFixed(d));
 const fmt = (x, d = 3) => String(round(x, d));
-const math = (s) => `\\(${s}\\)`;
+const escapeHtml = (s) => String(s)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;");
+const math = (s) => `<span class="math-fallback">${escapeHtml(convertLatexFormula(s))}</span>`;
 
 function detail(title, rows) {
   return `<h3>${title}</h3><dl>${rows.map(([label, body]) => `<div><dt>${label}</dt><dd>${body}</dd></div>`).join("")}</dl>`;
