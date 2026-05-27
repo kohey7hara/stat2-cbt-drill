@@ -1036,6 +1036,21 @@ const generators = [
     ]));
   },
   () => {
+    const rate = pick([0.02, 0.03, 0.05]);
+    const years = pick([5, 8, 10]);
+    const mean = rate * years;
+    const survival = Math.exp(-mean);
+    return q("分布", "CBT実戦", "ある船舶について、航行不能になる重大事故の発生回数はポアソン過程に従い、1年あたり平均λ回発生すると考える。今後t年間に重大事故が1回も起こらず、船舶が航行可能なままである確率として最も近いものを選べ。", [
+      `1年あたり平均事故回数 λ=${rate}`,
+      `期間 t=${years} 年`,
+      "重大事故が1回でも起きると航行不能になるとする"
+    ], survival, [1 - survival, Math.exp(-rate), mean * Math.exp(-mean), Math.exp(-rate) * years], detail("ポアソン過程の生存確率", [
+      ["考え方", `期間 ${math("t")} 年の事故回数を ${math("X")} とすると、${math("X\\sim Pois(\\lambda t)")} です。船が生存するとは、重大事故が0回ということです。`],
+      ["計算", `<div class="formula">${math(`P(X=0)=e^{-\\lambda t}\\frac{(\\lambda t)^0}{0!}=e^{-${rate}\\times ${years}}=${fmt(survival)}`)}</div>`],
+      ["CBT視点", `「少なくとも1回事故が起こる確率」は ${math("1-e^{-\\lambda t}")} です。生存確率を聞かれているなら補集合にしないで0回の確率を選びます。`]
+    ]));
+  },
+  () => {
     const a = rnd(3, 5);
     const b = rnd(2, 4);
     const r = rnd(3, 6);
