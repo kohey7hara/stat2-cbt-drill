@@ -1078,7 +1078,7 @@ function ensureTopicStats(topic) {
 }
 
 function buildQuestionSet() {
-  const requested = Math.max(5, Math.min(50, Number($("count-input").value) || 20));
+  const requested = Math.max(5, Math.min(120, Number($("count-input").value) || 70));
   const topic = $("topic-select").value;
   let pool = generators;
   if (topic !== "all") {
@@ -1095,7 +1095,15 @@ function buildQuestionSet() {
     const easyPool = pool.filter((gen) => !["CBT実戦", "難", "判断", "やや難"].includes(gen().difficulty));
     return Array.from({ length: count }, () => pick(Math.random() < 0.8 && hardPool.length ? hardPool : easyPool.length ? easyPool : pool)());
   }
-  return Array.from({ length: count }, () => pick(pool)());
+  const questions = [];
+  let remaining = count;
+  while (remaining > 0) {
+    const roundPool = shuffle(pool);
+    const take = Math.min(remaining, roundPool.length);
+    questions.push(...roundPool.slice(0, take).map((gen) => gen()));
+    remaining -= take;
+  }
+  return questions;
 }
 
 function startSession() {
