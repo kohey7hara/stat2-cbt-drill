@@ -340,6 +340,23 @@ input {
   text-align: left;
 }
 
+.shape-choice {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.shape-choice svg {
+  width: 132px;
+  height: 52px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafb;
+  fill: var(--accent);
+}
+
 .choice.is-selected {
   border-color: var(--focus);
   box-shadow: 0 0 0 2px rgba(22, 75, 143, 0.12);

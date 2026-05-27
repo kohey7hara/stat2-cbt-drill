@@ -33,7 +33,11 @@ function detail(title, rows) {
 function tipHtml(item) {
   const text = item.text;
   let tip = "";
-  if (text.includes("95%信頼区間")) {
+  if (text.includes("ヒストグラム")) {
+    tip = "簡単に言うと、数字の並びから「どこにデータが集まっているか」「外れ値が左右どちらにあるか」を読み、グラフの形を選ぶ問題です。右に大きな値が少数あれば右に裾が長くなります。";
+  } else if (text.includes("散布図")) {
+    tip = "簡単に言うと、xが増えたときにyも増えるのか、減るのか、ばらつくのかを表から読む問題です。点を頭の中で並べ、右上がり・右下がり・関係が弱い、を判断します。";
+  } else if (text.includes("95%信頼区間")) {
     tip = "簡単に言うと「本当の平均がだいたいこの範囲に入りそう」と見積もる問題です。95%信頼区間は、この方法で区間を100回作ると、そのうち約95回は真の母平均を含む、という意味です。1つの区間について『真の値が95%の確率で動く』という意味ではありません。";
   } else if (text.includes("CBT実戦") || item.difficulty === "CBT実戦") {
     tip = "簡単に言うと、長い文章や表の中から、必要な条件だけを抜き出して使う問題です。CBTでは問題文が親切に式を教えてくれないので、データの型、比較したいもの、推定か検定かを先に決めます。";
@@ -113,6 +117,21 @@ function q(topic, difficulty, text, given, correct, distractors, explanation, su
 
 function dataTable(headers, rows) {
   return `<table class="data-table"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function shapeCard(label, bars) {
+  const max = Math.max(...bars);
+  const width = 118;
+  const height = 46;
+  const gap = 4;
+  const barWidth = (width - gap * (bars.length - 1)) / bars.length;
+  const rects = bars.map((v, i) => {
+    const h = Math.max(4, (v / max) * height);
+    const x = i * (barWidth + gap);
+    const y = height - h;
+    return `<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="2"></rect>`;
+  }).join("");
+  return `<span class="shape-choice"><svg viewBox="0 0 ${width} ${height}" aria-hidden="true">${rects}</svg><span>${label}</span></span>`;
 }
 
 function renderGiven(given) {
@@ -783,6 +802,107 @@ const generators = [
       ["考え方", `店舗ごとの母数が違うため、率の単純平均ではなく、全苦情件数を全顧客数で割ります。`],
       ["計算", `<div class="formula">${math(`全体率=\\frac{${totalComplaints}}{${totalCustomers}}=${fmt(rate)}`)}</div>`],
       ["CBT視点", `平均の平均、率の平均は落とし穴です。母数が違う表では、何を分母にするかを確認します。`]
+    ]));
+  },
+  () => {
+    const type = pick(["right", "left", "symmetric", "bimodal"]);
+    const configs = {
+      right: {
+        data: [12, 14, 15, 16, 18, 19, 21, 23, 27, 35, 48, 72],
+        correct: shapeCard("右に裾が長いヒストグラム", [9, 7, 4, 2, 1]),
+        reason: "小さい値が多く、大きい外れ値が少数あるため、右側に裾が伸びます。"
+      },
+      left: {
+        data: [18, 42, 55, 61, 66, 70, 72, 73, 74, 75, 76, 78],
+        correct: shapeCard("左に裾が長いヒストグラム", [1, 2, 4, 7, 9]),
+        reason: "大きい値が多く、小さい外れ値が少数あるため、左側に裾が伸びます。"
+      },
+      symmetric: {
+        data: [42, 45, 48, 49, 50, 51, 52, 53, 55, 58],
+        correct: shapeCard("中央が高いほぼ対称なヒストグラム", [1, 4, 8, 4, 1]),
+        reason: "中心付近に値が集まり、左右の広がりがほぼ同じです。"
+      },
+      bimodal: {
+        data: [12, 14, 15, 17, 19, 48, 51, 53, 55, 58],
+        correct: shapeCard("山が2つあるヒストグラム", [5, 1, 0.5, 1, 5]),
+        reason: "低い値の集団と高い値の集団に分かれており、中央が少ないです。"
+      }
+    };
+    const c = configs[type];
+    return q("記述統計", "CBT実戦", "次のデータから作られるヒストグラムの形として最も適切なものを選べ。", `データ: ${c.data.join(", ")}`, c.correct, [
+      shapeCard("右に裾が長いヒストグラム", [9, 7, 4, 2, 1]),
+      shapeCard("左に裾が長いヒストグラム", [1, 2, 4, 7, 9]),
+      shapeCard("中央が高いほぼ対称なヒストグラム", [1, 4, 8, 4, 1]),
+      shapeCard("山が2つあるヒストグラム", [5, 1, 0.5, 1, 5])
+    ].filter((x) => x !== c.correct), detail("数字から分布の形を読む", [
+      ["考え方", `データを小さい順に見て、値がどこに密集しているか、外れた値がどちら側にあるかを確認します。`],
+      ["判断", c.reason],
+      ["CBT視点", `図がなくても、数字の並びからヒストグラムの概形を選ばせる問題があります。平均・中央値の大小とも結びつけて考えます。`]
+    ]));
+  },
+  () => {
+    const points = pick([
+      {
+        rows: [[1, 2], [2, 4], [3, 5], [4, 8], [5, 9], [6, 12]],
+        ans: "右上がりの強い正の相関",
+        note: "xが増えるほどyも増える傾向が明確です。"
+      },
+      {
+        rows: [[1, 12], [2, 10], [3, 9], [4, 7], [5, 5], [6, 3]],
+        ans: "右下がりの強い負の相関",
+        note: "xが増えるほどyは小さくなる傾向が明確です。"
+      },
+      {
+        rows: [[1, 5], [2, 10], [3, 6], [4, 11], [5, 4], [6, 9]],
+        ans: "明確な直線的関係は弱い",
+        note: "上下にばらつき、直線的な増加・減少が読み取りにくいです。"
+      }
+    ]);
+    return q("記述統計", "CBT実戦", "次の2変量データを散布図にしたときの特徴として最も適切なものを選べ。", dataTable(["x", "y"], points.rows), points.ans, ["右上がりの強い正の相関", "右下がりの強い負の相関", "明確な直線的関係は弱い", "完全な曲線関係で相関係数は必ず1"].filter((x) => x !== points.ans), detail("散布図の形を数字から読む", [
+      ["考え方", `${math("x")} が増えたとき ${math("y")} が増えるか、減るか、ばらつくかを表で追います。`],
+      ["判断", points.note],
+      ["CBT視点", `散布図そのものが出なくても、表から相関の向きや強さを選ばせることがあります。相関は因果とは限りません。`]
+    ]));
+  },
+  () => {
+    const p = pick([0.6, 0.55]);
+    const qLose = 1 - p;
+    const probAEnds5 = combination(4, 3) * p ** 3 * qLose * p;
+    const probEitherEnds5 = combination(4, 3) * p ** 3 * qLose * p + combination(4, 3) * qLose ** 3 * p * qLose;
+    return q("確率", "CBT実戦", "AとBが1日に1回勝負し、先に4勝した方を優勝とする。各日の勝敗は独立で、Aが1日に勝つ確率はpで一定である。5日目にAの優勝が決まる確率として最も近いものを選べ。", `p=${p}, Bが勝つ確率=${fmt(qLose)}`, probAEnds5, [probEitherEnds5, combination(5, 4) * p ** 4 * qLose, p ** 4, combination(4, 3) * p ** 3 * qLose], detail("5日目に決まる反復試行", [
+      ["考え方", `5日目にAが4勝目を取るには、最初の4日間でAが3勝1敗、5日目にAが勝つ必要があります。`],
+      ["計算", `<div class="formula">${math(`{4\\choose 3}p^3(1-p)\\times p={4\\choose 3}${p}^4(1-${p})=${fmt(probAEnds5)}`)}</div>`],
+      ["CBT視点", `「5日目に勝つ」なのか「5日目にAが優勝」なのか「5日目にどちらかの優勝が決まる」なのかで式が変わります。文章の主語を必ず確認します。`]
+    ]));
+  },
+  () => {
+    const lambda = pick([2, 3, 4]);
+    const ans = shapeCard("0付近が高く、右に裾を引く離散分布", [10, 9, 6, 3, 1]);
+    return q("分布", "CBT実戦", "平均発生回数がλのポアソン分布について、λが小さいときの確率分布の形として最も適切なものを選べ。", `λ=${lambda}`, ans, [
+      shapeCard("左右対称の釣鐘型", [1, 4, 9, 4, 1]),
+      shapeCard("0付近が高く、右に裾を引く離散分布", [10, 9, 6, 3, 1]),
+      shapeCard("両端が高く中央が低いU字型", [8, 2, 1, 2, 8]),
+      shapeCard("全区間でほぼ一定の高さ", [5, 5, 5, 5, 5])
+    ], detail("分布の形を読む", [
+      ["考え方", `ポアソン分布は非負整数の分布です。${math("\\lambda")} が小さいと0や1付近の確率が高く、右に裾を引きます。`],
+      ["判断", `左右対称の釣鐘型は正規分布、全区間で一定は一様分布のイメージです。`],
+      ["CBT視点", `分布名から平均・分散だけでなく、グラフの形と使う場面を選ばせる問題があります。`]
+    ]));
+  },
+  () => {
+    const n = pick([36, 64, 100]);
+    const sigma = pick([12, 15, 20]);
+    const se = sigma / Math.sqrt(n);
+    const ans = math(`\\bar{X}\\ \\text{は平均}\\ \\mu,\\ \\text{標準偏差}\\ ${fmt(se)}\\ \\text{の分布で近似できる`);
+    return q("分布", "CBT実戦", "母平均μ、母標準偏差σの母集団から大きさnの標本を抽出する。中心極限定理に基づく標本平均の分布に関する記述として最も適切なものを選べ。", `σ=${sigma}, n=${n}`, ans, [
+      math(`\\bar{X}\\ \\text{の標準偏差は}\\ ${sigma}\\ \\text{である`),
+      math(`\\bar{X}\\ \\text{の平均は}\\ 0\\ \\text{である`),
+      math(`\\bar{X}\\ \\text{の分散は}\\ \\sigma^2 n\\ \\text{である`),
+      math(`n\\ \\text{が大きいほど標準誤差は大きくなる`)
+    ], detail("標本平均の分布の式選択", [
+      ["考え方", `標本平均は、平均 ${math("\\mu")}、標準偏差 ${math("\\sigma/\\sqrt{n}")} の分布で近似できます。`],
+      ["計算", `<div class="formula">${math(`SE=\\frac{\\sigma}{\\sqrt{n}}=\\frac{${sigma}}{\\sqrt{${n}}}=${fmt(se)}`)}</div>`],
+      ["CBT視点", `数値を最後まで計算させるより、どの式が正しいかを選ばせる出題が多いです。`]
     ]));
   }
 ];
