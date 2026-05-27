@@ -56,7 +56,7 @@ function tipHtml(item) {
   } else if (text.includes("二項分布")) {
     tip = "簡単に言うと「同じ条件の成功・失敗をn回くり返したとき、成功が何回になるか」を考える問題です。成功確率が一定で、試行が独立という前提を確認します。";
   } else if (text.includes("ポアソン分布")) {
-    tip = "簡単に言うと「一定時間や一定範囲で、まれな出来事が何回起きるか」を考える問題です。平均発生回数λが中心になります。";
+    tip = `簡単に言うと「一定時間や一定範囲で、まれな出来事が何回起きるか」を考える問題です。平均発生回数 ${math("\\lambda")} が中心になります。`;
   } else if (text.includes("正規分布")) {
     tip = "簡単に言うと「平均から標準偏差何個分ズレているか」に直して、表や近似で確率を読む問題です。右側確率か左側確率かを最初に確認します。";
   } else if (text.includes("適合度検定")) {
@@ -179,7 +179,7 @@ const generators = [
     const n = rnd(4, 7);
     const k = rnd(1, n - 2);
     const prob = combination(n, k) * p ** k * (1 - p) ** (n - k);
-    return q("分布", "標準", "Xが二項分布 B(n,p) に従う。P(X=k)として最も近いものを選べ。", `n=${n}, p=${p}, k=${k}`, prob, [p ** k * (1 - p) ** (n - k), combination(n, k) * p ** (n - k) * (1 - p) ** k, n * p, k / n], detail("二項分布の確率質量", [
+    return q("分布", "標準", `${math("X")} が二項分布 ${math("B(n,p)")} に従う。${math("P(X=k)")} として最も近いものを選べ。`, `n=${n}, p=${p}, k=${k}`, prob, [p ** k * (1 - p) ** (n - k), combination(n, k) * p ** (n - k) * (1 - p) ** k, n * p, k / n], detail("二項分布の確率質量", [
       ["考え方", `独立な ${math("n")} 回の試行で、成功がちょうど ${math("k")} 回起きる確率です。`],
       ["計算", `<div class="formula">${math(`P(X=${k})={${n}\\choose ${k}}${p}^{${k}}(1-${p})^{${n - k}}=${fmt(prob)}`)}</div>`],
       ["注意点", `成功の並び方が複数あるため、組合せ係数 ${math(`{${n}\\choose ${k}}`)} が必要です。`]
@@ -189,7 +189,7 @@ const generators = [
     const lambda = rnd(2, 5);
     const k = rnd(0, 3);
     const prob = Math.exp(-lambda) * lambda ** k / factorial(k);
-    return q("分布", "標準", "Xがポアソン分布 Pois(λ) に従う。P(X=k)として最も近いものを選べ。", `λ=${lambda}, k=${k}`, prob, [Math.exp(-lambda) * lambda ** (k + 1) / factorial(k), lambda * Math.exp(-lambda), 1 - prob, lambda], detail("ポアソン分布の確率", [
+    return q("分布", "標準", `${math("X")} がポアソン分布 ${math("Pois(\\lambda)")} に従う。${math("P(X=k)")} として最も近いものを選べ。`, `${math(`\\lambda=${lambda}`)}, k=${k}`, prob, [Math.exp(-lambda) * lambda ** (k + 1) / factorial(k), lambda * Math.exp(-lambda), 1 - prob, lambda], detail("ポアソン分布の確率", [
       ["考え方", `一定時間・一定範囲に起こる回数を表す分布です。平均発生回数が ${math("\\lambda")} です。`],
       ["計算", `<div class="formula">${math(`P(X=${k})=e^{-${lambda}}\\frac{${lambda}^{${k}}}{${k}!}=${fmt(prob)}`)}</div>`],
       ["注意点", `平均も分散も ${math("\\lambda")} ですが、この問題で問われているのは確率 ${math("P(X=k)")} です。`]
@@ -200,7 +200,7 @@ const generators = [
     const sigma = rnd(8, 20);
     const x = mu + pick([1, 1.5, 2]) * sigma;
     const prob = 1 - normalCdfApprox((x - mu) / sigma);
-    return q("分布", "やや難", "Xが正規分布 N(μ,σ^2) に従う。P(X>x)として最も近いものを選べ。", `μ=${mu}, σ=${sigma}, x=${x}`, prob, [1 - prob, normalCdfApprox((x - mu) / sigma), prob / 2, 0.5 - prob], detail("正規分布は標準化して右側を見る", [
+    return q("分布", "やや難", `${math("X")} が正規分布 ${math("N(\\mu,\\sigma^2)")} に従う。${math("P(X>x)")} として最も近いものを選べ。`, `${math(`\\mu=${mu}`)}, ${math(`\\sigma=${sigma}`)}, x=${x}`, prob, [1 - prob, normalCdfApprox((x - mu) / sigma), prob / 2, 0.5 - prob], detail("正規分布は標準化して右側を見る", [
       ["考え方", `まず標準正規分布 ${math("Z")} に直します。求めたいのは ${math("P(X>x)")} なので右側確率です。`],
       ["計算", `<div class="formula">${math(`z=\\frac{x-\\mu}{\\sigma}=\\frac{${x}-${mu}}{${sigma}}=${fmt((x - mu) / sigma)}`)}<br>${math(`P(X>${x})=1-\\Phi(${fmt((x - mu) / sigma)})=${fmt(prob)}`)}</div>`],
       ["注意点", `${math("\\Phi(z)")} は左側確率です。右側を聞かれたら ${math("1-\\Phi(z)")} にします。`]
@@ -237,7 +237,7 @@ const generators = [
     const mu0 = 50;
     const sd = rnd(8, 12);
     const z = (mean - mu0) / (sd / Math.sqrt(n));
-    return q("検定", "標準", "母標準偏差既知の片側検定 H0: μ=50, H1: μ>50 を行う。検定統計量として最も近いものを選べ。", `標本平均 ${mean}、母標準偏差 ${sd}、n=${n}`, z, [(mean - mu0) / sd, (mean - mu0) / Math.sqrt(n), (mu0 - mean) / (sd / Math.sqrt(n)), z ** 2], detail("母標準偏差既知の平均検定", [
+    return q("検定", "標準", `母標準偏差既知の片側検定 ${math("H_0:\\mu=50")}, ${math("H_1:\\mu>50")} を行う。検定統計量として最も近いものを選べ。`, `標本平均 ${mean}、母標準偏差 ${sd}、n=${n}`, z, [(mean - mu0) / sd, (mean - mu0) / Math.sqrt(n), (mu0 - mean) / (sd / Math.sqrt(n)), z ** 2], detail("母標準偏差既知の平均検定", [
       ["考え方", `母標準偏差 ${math("\\sigma")} が既知なので、標準正規分布に基づく ${math("z")} 統計量を使います。`],
       ["計算", `<div class="formula">${math(`z=\\frac{\\bar{x}-\\mu_0}{\\sigma/\\sqrt{n}}=\\frac{${mean}-${mu0}}{${sd}/\\sqrt{${n}}}=${fmt(z)}`)}</div>`],
       ["注意点", `片側か両側かは棄却域やp値の判断で効きます。検定統計量そのものは同じ式です。`]
@@ -269,7 +269,7 @@ const generators = [
     const sst = rnd(120, 240);
     const sse = rnd(30, 90);
     const r2 = 1 - sse / sst;
-    return q("回帰", "基礎", "回帰分析で総平方和SST、残差平方和SSEが次のとき、決定係数R^2はいくつか。", `SST=${sst}, SSE=${sse}`, r2, [sse / sst, 1 + sse / sst, Math.sqrt(r2), sst / sse], detail("決定係数の意味", [
+    return q("回帰", "基礎", `回帰分析で総平方和 ${math("SST")}、残差平方和 ${math("SSE")} が次のとき、決定係数 ${math("R^2")} はいくつか。`, `${math(`SST=${sst}`)}, ${math(`SSE=${sse}`)}`, r2, [sse / sst, 1 + sse / sst, Math.sqrt(r2), sst / sse], detail("決定係数の意味", [
       ["考え方", `総変動のうち、回帰式で説明できた割合が決定係数 ${math("R^2")} です。`],
       ["計算", `<div class="formula">${math(`R^2=1-\\frac{SSE}{SST}=1-\\frac{${sse}}{${sst}}=${fmt(r2)}`)}</div>`],
       ["注意点", `${math("SSE/SST")} は説明できなかった割合です。決定係数はその反対側、つまり ${math("1-SSE/SST")} です。`]
@@ -443,7 +443,7 @@ const generators = [
     const x = Math.round(n * (p0 + pick([0.06, 0.08, -0.07])));
     const phat = x / n;
     const z = (phat - p0) / Math.sqrt(p0 * (1 - p0) / n);
-    return q("検定", "難", "母比率の検定 H0: p=p0 における検定統計量として最も近いものを選べ。", `p0=${p0}, n=${n}, 成功数=${x}`, z, [(phat - p0) / Math.sqrt(phat * (1 - phat) / n), phat, (x - p0) / Math.sqrt(n), z ** 2], detail("比率検定では帰無仮説の比率で標準化", [
+    return q("検定", "難", `母比率の検定 ${math("H_0:p=p_0")} における検定統計量として最も近いものを選べ。`, `${math(`p_0=${p0}`)}, n=${n}, 成功数=${x}`, z, [(phat - p0) / Math.sqrt(phat * (1 - phat) / n), phat, (x - p0) / Math.sqrt(n), z ** 2], detail("比率検定では帰無仮説の比率で標準化", [
       ["考え方", `検定統計量では、帰無仮説が正しいと仮定したときの標準誤差を使います。`],
       ["計算", `<div class="formula">${math(`\\hat{p}=\\frac{${x}}{${n}}=${fmt(phat)}`)}<br>${math(`z=\\frac{\\hat{p}-p_0}{\\sqrt{p_0(1-p_0)/n}}=\\frac{${fmt(phat)}-${p0}}{\\sqrt{${p0}(1-${p0})/${n}}}=${fmt(z)}`)}</div>`],
       ["注意点", `信頼区間では ${math("\\hat{p}")}、検定では ${math("p_0")} を標準誤差に入れる、という違いが問われやすいです。`]
@@ -454,7 +454,7 @@ const generators = [
     const s2 = rnd(18, 35);
     const sigma02 = rnd(12, 20);
     const stat = (n - 1) * s2 / sigma02;
-    return q("検定", "難", "正規母集団の母分散について H0: σ^2=σ0^2 を検定する。カイ二乗統計量として最も近いものを選べ。", `n=${n}, 標本分散 s^2=${s2}, σ0^2=${sigma02}`, stat, [s2 / sigma02, n * s2 / sigma02, Math.sqrt(stat), (n - 1) * sigma02 / s2], detail("母分散の検定統計量", [
+    return q("検定", "難", `正規母集団の母分散について ${math("H_0:\\sigma^2=\\sigma_0^2")} を検定する。カイ二乗統計量として最も近いものを選べ。`, `n=${n}, 標本分散 ${math(`s^2=${s2}`)}, ${math(`\\sigma_0^2=${sigma02}`)}`, stat, [s2 / sigma02, n * s2 / sigma02, Math.sqrt(stat), (n - 1) * sigma02 / s2], detail("母分散の検定統計量", [
       ["考え方", `正規母集団の母分散の検定では、カイ二乗分布を使います。`],
       ["計算", `<div class="formula">${math(`\\chi^2=\\frac{(n-1)s^2}{\\sigma_0^2}=\\frac{(${n}-1)${s2}}{${sigma02}}=${fmt(stat)}`)}</div>`],
       ["注意点", `自由度は ${math("n-1")} です。平均の検定と分散の検定で使う分布が違う点を押さえます。`]
@@ -464,7 +464,7 @@ const generators = [
     const pvalue = pick([0.012, 0.032, 0.081, 0.18]);
     const alpha = pick([0.01, 0.05]);
     const ans = pvalue < alpha ? "帰無仮説を棄却する" : "帰無仮説を棄却しない";
-    return q("検定", "判断", "p値と有意水準に基づく判断として最も適切なものを選べ。", `p値=${pvalue}, 有意水準 α=${alpha}`, ans, [pvalue < alpha ? "帰無仮説を棄却しない" : "帰無仮説を棄却する", "帰無仮説が正しい確率はp値である", "対立仮説が正しい確率は1-p値である", "有意水準よりp値が大きいほど強い証拠である"], detail("p値の正しい読み方", [
+    return q("検定", "判断", `p値と有意水準に基づく判断として最も適切なものを選べ。`, `p値=${pvalue}, 有意水準 ${math(`\\alpha=${alpha}`)}`, ans, [pvalue < alpha ? "帰無仮説を棄却しない" : "帰無仮説を棄却する", "帰無仮説が正しい確率はp値である", "対立仮説が正しい確率は1-p値である", "有意水準よりp値が大きいほど強い証拠である"], detail("p値の正しい読み方", [
       ["考え方", `p値は、帰無仮説のもとで観測結果以上に極端な結果が出る確率です。${math("p<\\alpha")} なら棄却します。`],
       ["判断", `<div class="formula">${math(`${pvalue} ${pvalue < alpha ? "<" : "\\ge"} ${alpha}`)}</div>${ans}。`],
       ["注意点", `p値は「帰無仮説が正しい確率」ではありません。CBTではこの誤解を直接問われることがあります。`]
@@ -633,7 +633,7 @@ const generators = [
     const z = (phat - p0) / Math.sqrt(p0 * (1 - p0) / n);
     const pOne = 1 - normalCdfApprox(z);
     const pTwo = 2 * Math.min(pOne, 1 - pOne);
-    return q("検定", "難", "母比率の両側検定で、近似的なp値として最も近いものを選べ。", `H0: p=0.5, n=${n}, 成功数=${x}`, pTwo, [pOne, 1 - pOne, phat, Math.abs(z)], detail("両側p値は片側確率を2倍する", [
+    return q("検定", "難", "母比率の両側検定で、近似的なp値として最も近いものを選べ。", `${math("H_0:p=0.5")}, n=${n}, 成功数=${x}`, pTwo, [pOne, 1 - pOne, phat, Math.abs(z)], detail("両側p値は片側確率を2倍する", [
       ["考え方", `両側検定では、観測された ${math("|z|")} 以上に極端な左右両側の確率を足します。`],
       ["計算", `<div class="formula">${math(`z=\\frac{${fmt(phat)}-0.5}{\\sqrt{0.5(1-0.5)/${n}}}=${fmt(z)}`)}<br>${math(`p\\値\\approx 2\\{1-\\Phi(|${fmt(z)}|)\\}=${fmt(pTwo)}`)}</div>`],
       ["注意点", `片側p値と両側p値を取り違えると、結論が変わることがあります。`]
@@ -762,9 +762,9 @@ const generators = [
     const threshold = mu + pick([3, 4]) * sigma / Math.sqrt(n);
     const z = (threshold - mu) / (sigma / Math.sqrt(n));
     const prob = 1 - normalCdfApprox(z);
-    return q("分布", "CBT実戦", "ある製品の重量は平均100g、標準偏差σgの母集団から独立に抽出される。n個の平均重量が基準値を超える確率を、中心極限定理に基づき近似したい。最も近いものを選べ。", [
-      `母平均 μ=${mu}`,
-      `母標準偏差 σ=${sigma}`,
+    return q("分布", "CBT実戦", `ある製品の重量は平均100g、標準偏差 ${math("\\sigma")} gの母集団から独立に抽出される。${math("n")} 個の平均重量が基準値を超える確率を、中心極限定理に基づき近似したい。最も近いものを選べ。`, [
+      `母平均 ${math(`\\mu=${mu}`)}`,
+      `母標準偏差 ${math(`\\sigma=${sigma}`)}`,
       `標本サイズ n=${n}`,
       `基準値 ${fmt(threshold, 2)}`
     ], prob, [1 - normalCdfApprox((threshold - mu) / sigma), normalCdfApprox(z), sigma / Math.sqrt(n), 0.5], detail("中心極限定理の実戦読解", [
@@ -878,7 +878,7 @@ const generators = [
   () => {
     const lambda = pick([2, 3, 4]);
     const ans = shapeCard("0付近が高く、右に裾を引く離散分布", [10, 9, 6, 3, 1]);
-    return q("分布", "CBT実戦", "平均発生回数がλのポアソン分布について、λが小さいときの確率分布の形として最も適切なものを選べ。", `λ=${lambda}`, ans, [
+    return q("分布", "CBT実戦", `平均発生回数が ${math("\\lambda")} のポアソン分布について、${math("\\lambda")} が小さいときの確率分布の形として最も適切なものを選べ。`, math(`\\lambda=${lambda}`), ans, [
       shapeCard("左右対称の釣鐘型", [1, 4, 9, 4, 1]),
       shapeCard("0付近が高く、右に裾を引く離散分布", [10, 9, 6, 3, 1]),
       shapeCard("両端が高く中央が低いU字型", [8, 2, 1, 2, 8]),
@@ -894,7 +894,7 @@ const generators = [
     const sigma = pick([12, 15, 20]);
     const se = sigma / Math.sqrt(n);
     const ans = math(`\\bar{X}\\ \\text{は平均}\\ \\mu,\\ \\text{標準偏差}\\ ${fmt(se)}\\ \\text{の分布で近似できる`);
-    return q("分布", "CBT実戦", "母平均μ、母標準偏差σの母集団から大きさnの標本を抽出する。中心極限定理に基づく標本平均の分布に関する記述として最も適切なものを選べ。", `σ=${sigma}, n=${n}`, ans, [
+    return q("分布", "CBT実戦", `母平均 ${math("\\mu")}、母標準偏差 ${math("\\sigma")} の母集団から大きさ ${math("n")} の標本を抽出する。中心極限定理に基づく標本平均の分布に関する記述として最も適切なものを選べ。`, `${math(`\\sigma=${sigma}`)}, n=${n}`, ans, [
       math(`\\bar{X}\\ \\text{の標準偏差は}\\ ${sigma}\\ \\text{である`),
       math(`\\bar{X}\\ \\text{の平均は}\\ 0\\ \\text{である`),
       math(`\\bar{X}\\ \\text{の分散は}\\ \\sigma^2 n\\ \\text{である`),
@@ -909,14 +909,14 @@ const generators = [
     const p = 0.62;
     const qLose = 1 - p;
     const alpha = p ** 3 + qLose ** 3;
-    return q("検定", "CBT実戦", "ある画鋲を投げると針が上向きになる確率をpとする。帰無仮説 H0: p=0.62 を検定したい。3回投げ、3回とも上向きまたは3回とも下向きならH0を棄却し、それ以外では棄却しない。このとき第1種の誤りと、その確率αの組合せとして最も適切なものを選べ。", [
-      "第1種の誤り: H0が正しいにもかかわらずH0を棄却する誤り",
+    return q("検定", "CBT実戦", `ある画鋲を投げると針が上向きになる確率を ${math("p")} とする。帰無仮説 ${math("H_0:p=0.62")} を検定したい。3回投げ、3回とも上向きまたは3回とも下向きなら ${math("H_0")} を棄却し、それ以外では棄却しない。このとき第1種の誤りと、その確率 ${math("\\alpha")} の組合せとして最も適切なものを選べ。`, [
+      `第1種の誤り: ${math("H_0")} が正しいにもかかわらず ${math("H_0")} を棄却する誤り`,
       "棄却域: 3回とも上向き、または3回とも下向き"
-    ], `H0が正しいのに棄却する誤り、α=${fmt(alpha, 4)}`, [
-      `H0が正しいのに棄却しない誤り、α=${fmt(alpha, 4)}`,
-      `H0が正しいのに棄却する誤り、α=${fmt(1 - alpha, 4)}`,
-      `H0が誤りなのに棄却する誤り、α=${fmt(alpha, 4)}`,
-      `H0が正しいのに棄却する誤り、α=${fmt(p ** 3, 4)}`
+    ], `${math("H_0")} が正しいのに棄却する誤り、${math(`\\alpha=${fmt(alpha, 4)}`)}`, [
+      `${math("H_0")} が正しいのに棄却しない誤り、${math(`\\alpha=${fmt(alpha, 4)}`)}`,
+      `${math("H_0")} が正しいのに棄却する誤り、${math(`\\alpha=${fmt(1 - alpha, 4)}`)}`,
+      `${math("H_0")} が誤りなのに棄却する誤り、${math(`\\alpha=${fmt(alpha, 4)}`)}`,
+      `${math("H_0")} が正しいのに棄却する誤り、${math(`\\alpha=${fmt(p ** 3, 4)}`)}`
     ], detail("スクリーンイメージ型: 第1種の誤り", [
       ["考え方", `第1種の誤りは、${math("H_0")} が正しいのに棄却してしまう誤りです。したがって ${math("p=0.62")} のもとで棄却域に入る確率を計算します。`],
       ["計算", `<div class="formula">${math(`\\alpha=P(3回上向き)+P(3回下向き)=0.62^3+0.38^3=${fmt(alpha, 4)}`)}</div>`],
@@ -973,7 +973,7 @@ const generators = [
     const se = Math.sqrt(s1 ** 2 / n1 + s2 ** 2 / n2);
     const lower = diff - 1.96 * se;
     const upper = diff + 1.96 * se;
-    return q("推定", "CBT実戦", "独立な2群の母平均の差 μ1-μ2 の95%信頼区間を、大標本近似で構成したい。最も適切な区間を選べ。", [
+    return q("推定", "CBT実戦", `独立な2群の母平均の差 ${math("\\mu_1-\\mu_2")} の95%信頼区間を、大標本近似で構成したい。最も適切な区間を選べ。`, [
       `標本平均の差 x̄1-x̄2=${diff}`,
       `群1: n1=${n1}, s1=${s1}`,
       `群2: n2=${n2}, s2=${s2}`
@@ -1005,7 +1005,7 @@ const generators = [
     const p = pick([0.2, 0.3, 0.4]);
     const k = Math.round(n * p + pick([1, 1.5]) * Math.sqrt(n * p * (1 - p)));
     const z = (k + 0.5 - n * p) / Math.sqrt(n * p * (1 - p));
-    return q("分布", "難", "Xが二項分布B(n,p)に従う。正規近似を用いて P(X≤k) を求めるときの標準化として最も適切なものを選べ。", `n=${n}, p=${p}, k=${k}`, math(`z=\\frac{${k}+0.5-${n}\\times ${p}}{\\sqrt{${n}\\times ${p}(1-${p})}}`), [math(`z=\\frac{${k}-${n}\\times ${p}}{${n}\\times ${p}(1-${p})}`), math(`z=\\frac{${k}+0.5-${p}}{\\sqrt{${p}(1-${p})/${n}}}`), math(`z=\\frac{${k}-${n}\\times ${p}}{\\sqrt{${n}}}`), math(`z=\\frac{${k}+0.5}{${n}\\times ${p}}`)], detail("二項分布の正規近似", [
+    return q("分布", "難", `${math("X")} が二項分布 ${math("B(n,p)")} に従う。正規近似を用いて ${math("P(X\\le k)")} を求めるときの標準化として最も適切なものを選べ。`, `n=${n}, p=${p}, k=${k}`, math(`z=\\frac{${k}+0.5-${n}\\times ${p}}{\\sqrt{${n}\\times ${p}(1-${p})}}`), [math(`z=\\frac{${k}-${n}\\times ${p}}{${n}\\times ${p}(1-${p})}`), math(`z=\\frac{${k}+0.5-${p}}{\\sqrt{${p}(1-${p})/${n}}}`), math(`z=\\frac{${k}-${n}\\times ${p}}{\\sqrt{${n}}}`), math(`z=\\frac{${k}+0.5}{${n}\\times ${p}}`)], detail("二項分布の正規近似", [
       ["考え方", `二項分布 ${math("B(n,p)")} は平均 ${math("np")}、分散 ${math("np(1-p)")} の正規分布で近似できます。${math("P(X\\le k)")} では連続性補正で ${math("k+0.5")} を使います。`],
       ["計算", `<div class="formula">${math(`z=\\frac{k+0.5-np}{\\sqrt{np(1-p)}}=\\frac{${k}+0.5-${n}\\times ${p}}{\\sqrt{${n}\\times ${p}(1-${p})}}=${fmt(z)}`)}</div>`],
       ["CBT視点", `式選択問題では、分母が分散なのか標準偏差なのか、連続性補正が入っているかを見ます。`]
@@ -1040,9 +1040,9 @@ const generators = [
     const years = pick([5, 8, 10]);
     const mean = rate * years;
     const survival = Math.exp(-mean);
-    return q("分布", "CBT実戦", "ある船舶について、航行不能になる重大事故の発生回数はポアソン過程に従い、1年あたり平均λ回発生すると考える。今後t年間に重大事故が1回も起こらず、船舶が航行可能なままである確率として最も近いものを選べ。", [
-      `1年あたり平均事故回数 λ=${rate}`,
-      `期間 t=${years} 年`,
+    return q("分布", "CBT実戦", `ある船舶について、航行不能になる重大事故の発生回数はポアソン過程に従い、1年あたり平均 ${math("\\lambda")} 回発生すると考える。今後 ${math("t")} 年間に重大事故が1回も起こらず、船舶が航行可能なままである確率として最も近いものを選べ。`, [
+      `1年あたり平均事故回数 ${math(`\\lambda=${rate}`)}`,
+      `期間 ${math(`t=${years}`)} 年`,
       "重大事故が1回でも起きると航行不能になるとする"
     ], survival, [1 - survival, Math.exp(-rate), mean * Math.exp(-mean), Math.exp(-rate) * years], detail("ポアソン過程の生存確率", [
       ["考え方", `期間 ${math("t")} 年の事故回数を ${math("X")} とすると、${math("X\\sim Pois(\\lambda t)")} です。船が生存するとは、重大事故が0回ということです。`],
