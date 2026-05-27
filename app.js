@@ -103,6 +103,32 @@ const subscriptMap = {
   y: "ᵧ"
 };
 
+const superscriptMap = {
+  0: "⁰",
+  1: "¹",
+  2: "²",
+  3: "³",
+  4: "⁴",
+  5: "⁵",
+  6: "⁶",
+  7: "⁷",
+  8: "⁸",
+  9: "⁹",
+  "+": "⁺",
+  "-": "⁻",
+  "(": "⁽",
+  ")": "⁾",
+  n: "ⁿ"
+};
+
+function toSubscript(chars) {
+  return [...chars].map((ch) => subscriptMap[ch] || ch).join("");
+}
+
+function toSuperscript(chars) {
+  return [...chars].map((ch) => superscriptMap[ch] || ch).join("");
+}
+
 function readBraced(s, start) {
   if (s[start] !== "{") return null;
   let depth = 0;
@@ -151,10 +177,11 @@ function convertLatexFormula(input) {
   s = s.replace(/\\sim/g, "∼");
   s = s.replace(/\\quad/g, "  ");
   s = s.replace(/\\text\{([^{}]+)\}/g, "$1");
-  s = s.replace(/\^\{([^{}]+)\}/g, "^$1");
-  s = s.replace(/\^([A-Za-z0-9+\-]+)/g, "^$1");
-  s = s.replace(/_\{([^{}]+)\}/g, (_, chars) => [...chars].map((ch) => subscriptMap[ch] || ch).join(""));
-  s = s.replace(/_([A-Za-z0-9])/g, (_, ch) => subscriptMap[ch] || ch);
+  s = s.replace(/\^\{([^{}]+)\}/g, (_, chars) => toSuperscript(chars));
+  s = s.replace(/\^([A-Za-z0-9+\-()]+)/g, (_, chars) => toSuperscript(chars));
+  s = s.replace(/_\{([^{}]+)\}/g, (_, chars) => toSubscript(chars));
+  s = s.replace(/_([A-Za-z0-9])/g, (_, ch) => toSubscript(ch));
+  s = s.replace(/([A-Za-zα-ωΑ-Ωμσλχβ])([0-9]+)/g, (_, base, digits) => `${base}${toSubscript(digits)}`);
   s = s.replace(/[{}]/g, "");
   s = s.replace(/\\/g, "");
   return s.replace(/\s+/g, " ").trim();
