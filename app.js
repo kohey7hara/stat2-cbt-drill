@@ -75,13 +75,126 @@ function tipHtml(item) {
   return `<div class="tip-box"><b>まず何を求める問題？</b>${tip}</div>`;
 }
 
+const subscriptMap = {
+  0: "₀",
+  1: "₁",
+  2: "₂",
+  3: "₃",
+  4: "₄",
+  5: "₅",
+  6: "₆",
+  7: "₇",
+  8: "₈",
+  9: "₉",
+  A: "ₐ",
+  B: "ᵦ",
+  E: "ₑ",
+  i: "ᵢ",
+  j: "ⱼ",
+  k: "ₖ",
+  n: "ₙ",
+  p: "ₚ",
+  x: "ₓ",
+  y: "ᵧ"
+};
+
+function readBraced(s, start) {
+  if (s[start] !== "{") return null;
+  let depth = 0;
+  for (let i = start; i < s.length; i += 1) {
+    if (s[i] === "{") depth += 1;
+    if (s[i] === "}") depth -= 1;
+    if (depth === 0) return { value: s.slice(start + 1, i), end: i + 1 };
+  }
+  return null;
+}
+
+function convertLatexFormula(input) {
+  let s = input;
+  s = s.replace(/\\frac\{/g, "__FRAC__{");
+  while (s.includes("__FRAC__{")) {
+    const start = s.indexOf("__FRAC__{");
+    const numerator = readBraced(s, start + "__FRAC__".length);
+    if (!numerator) break;
+    const denominator = readBraced(s, numerator.end);
+    if (!denominator) break;
+    const top = convertLatexFormula(numerator.value);
+    const bottom = convertLatexFormula(denominator.value);
+    s = `${s.slice(0, start)}(${top})/(${bottom})${s.slice(denominator.end)}`;
+  }
+  s = s.replace(/\\sqrt\{([^{}]+)\}/g, "√($1)");
+  s = s.replace(/\\choose/g, "C");
+  s = s.replace(/\\bar\{x\}/g, "x̄");
+  s = s.replace(/\\bar\{X\}/g, "X̄");
+  s = s.replace(/\\hat\{p\}/g, "p̂");
+  s = s.replace(/\\hat\{y\}/g, "ŷ");
+  s = s.replace(/\\hat\{\\beta\}/g, "β̂");
+  s = s.replace(/\\mu/g, "μ");
+  s = s.replace(/\\sigma/g, "σ");
+  s = s.replace(/\\lambda/g, "λ");
+  s = s.replace(/\\alpha/g, "α");
+  s = s.replace(/\\beta/g, "β");
+  s = s.replace(/\\chi/g, "χ");
+  s = s.replace(/\\Phi/g, "Φ");
+  s = s.replace(/\\pm/g, "±");
+  s = s.replace(/\\times/g, "×");
+  s = s.replace(/\\le/g, "≤");
+  s = s.replace(/\\ge/g, "≥");
+  s = s.replace(/\\cup/g, "∪");
+  s = s.replace(/\\cap/g, "∩");
+  s = s.replace(/\\mid/g, "|");
+  s = s.replace(/\\sim/g, "∼");
+  s = s.replace(/\\quad/g, "  ");
+  s = s.replace(/\\text\{([^{}]+)\}/g, "$1");
+  s = s.replace(/\^\{([^{}]+)\}/g, "^$1");
+  s = s.replace(/\^([A-Za-z0-9+\-]+)/g, "^$1");
+  s = s.replace(/_\{([^{}]+)\}/g, (_, chars) => [...chars].map((ch) => subscriptMap[ch] || ch).join(""));
+  s = s.replace(/_([A-Za-z0-9])/g, (_, ch) => subscriptMap[ch] || ch);
+  s = s.replace(/[{}]/g, "");
+  s = s.replace(/\\/g, "");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function renderMathFallback(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) {
+    if (walker.currentNode.nodeValue.includes("\\(")) nodes.push(walker.currentNode);
+  }
+  nodes.forEach((node) => {
+    const fragment = document.createDocumentFragment();
+    const parts = node.nodeValue.split(/(\\\(.+?\\\))/g);
+    parts.forEach((part) => {
+      if (part.startsWith("\\(") && part.endsWith("\\)")) {
+        const span = document.createElement("span");
+        span.className = "math-fallback";
+        span.textContent = convertLatexFormula(part.slice(2, -2));
+        fragment.appendChild(span);
+      } else {
+        fragment.appendChild(document.createTextNode(part));
+      }
+    });
+    node.parentNode.replaceChild(fragment, node);
+  });
+}
+
 function typesetMath(root = document.body, attempt = 0) {
   if (window.MathJax?.typesetPromise) {
-    window.MathJax.typesetPromise([root]).catch(() => {});
+    const run = () => {
+      if (window.MathJax.typesetClear) window.MathJax.typesetClear([root]);
+      window.MathJax.typesetPromise([root]).catch(() => {});
+    };
+    if (window.MathJax.startup?.promise) {
+      window.MathJax.startup.promise.then(run).catch(() => {});
+    } else {
+      run();
+    }
     return;
   }
-  if (attempt < 20) {
-    window.setTimeout(() => typesetMath(root, attempt + 1), 150);
+  if (attempt < 16) {
+    window.setTimeout(() => typesetMath(root, attempt + 1), 250);
+  } else {
+    renderMathFallback(root);
   }
 }
 
@@ -1122,7 +1235,7 @@ function renderQuestion() {
   $("question-number").textContent = `No. ${state.current + 1} / ${state.questions.length}`;
   $("question-topic").textContent = item.topic;
   $("question-difficulty").textContent = item.difficulty;
-  $("question-text").textContent = item.text;
+  $("question-text").innerHTML = item.text;
   $("given-box").innerHTML = renderGiven(item.given);
   $("choices").innerHTML = item.choices
     .map((choice, index) => `<button class="choice" type="button" data-index="${index}"><span class="mark">${index + 1}</span><span>${choice}</span></button>`)

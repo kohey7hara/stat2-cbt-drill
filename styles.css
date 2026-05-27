@@ -319,6 +319,14 @@ input {
   line-height: 1.55;
 }
 
+.math-fallback {
+  display: inline-block;
+  padding: 0 0.08em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.98em;
+  white-space: nowrap;
+}
+
 .given-box:empty {
   display: none;
 }
